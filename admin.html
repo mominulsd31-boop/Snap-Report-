@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin</title><link rel="stylesheet" href="/style.css"></head><body><div class="top"><b>ADMIN PANEL</b><button class="danger" onclick="logout()">LOGOUT</button></div><header>ADMIN</header><main class="grid">
+<section class="card"><h2>Add Report</h2><input id="date" type="date" required><input id="username" placeholder="Worker username" required><textarea id="report" placeholder="Write report..." rows="7"></textarea><button onclick="addReport()">ADD REPORT</button><div id="msg"></div></section>
+<section class="card"><h2>Create User</h2><input id="newuser" placeholder="Username"><input id="newpass" placeholder="Password"><select id="role"><option value="worker">Worker</option><option value="admin">Admin</option></select><button onclick="addUser()">CREATE USER</button><div id="umsg"></div></section>
+<section class="card full"><h2>All Reports</h2><div id="reports"></div></section>
+<section class="card full"><h2>Users</h2><div id="users"></div></section>
+</main><script>
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+async function addReport(){let r=await fetch("/api/admin/reports",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date:date.value,username:username.value,report:report.value})});let d=await r.json();msg.textContent=r.ok?"Report added":d.error;if(r.ok){report.value="";load()}}
+async function addUser(){let r=await fetch("/api/admin/users",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:newuser.value,password:newpass.value,role:role.value})});let d=await r.json();umsg.textContent=r.ok?"User created":d.error;if(r.ok){newuser.value="";newpass.value="";load()}}
+async function delReport(id){await fetch("/api/admin/reports/"+id,{method:"DELETE"});load()}
+async function delUser(u){if(confirm("Delete "+u+"?")){await fetch("/api/admin/users/"+encodeURIComponent(u),{method:"DELETE"});load()}}
+async function load(){let r=await fetch("/api/admin/reports");if(!r.ok)return location.href="/login.html";let a=await r.json();reports.innerHTML=a.length?a.map(x=>`<div class="row"><span><b>${esc(x.date)}</b> — ${esc(x.username)}<br>${esc(x.report)}</span><button class="danger small" onclick="delReport(${x.id})">DELETE</button></div>`).join(""):"No reports";let u=await (await fetch("/api/admin/users")).json();users.innerHTML=u.map(x=>`<div class="row"><span>${esc(x.username)} (${esc(x.role)})</span><button class="danger small" onclick="delUser('${esc(x.username)}')">DELETE</button></div>`).join("")}
+async function logout(){await fetch("/api/logout",{method:"POST"});location.href="/login.html"} load();
+</script></body></html>
